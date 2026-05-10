@@ -27,3 +27,7 @@ logging:
   level:
     root: INFO
     com.wallet: DEBUG
+
+wallet:
+  seed:
+    enabled: true

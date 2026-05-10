@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class IdempotencyKeyPurgeJob {
@@ -19,6 +20,7 @@ public class IdempotencyKeyPurgeJob {
   }
 
   @Scheduled(fixedRateString = "${wallet.idempotency.purge-rate-ms:3600000}") // Every 1 hour
+  @Transactional
   public void purgeExpiredKeys() {
     Instant before = Instant.now().minus(24, ChronoUnit.HOURS);
     int deleted = repository.deleteOlderThan(before);
