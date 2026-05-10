@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Pre-commit hook for banking-wallet
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or run: ./scripts/install-hooks.sh
+
+set -euo pipefail
+
+echo "🔍 Running pre-commit checks..."
+
+# Check code formatting with Spotless
+echo "  → Spotless format check..."
+if ! ./gradlew spotlessCheck --quiet 2>/dev/null; then
+    echo ""
+    echo "❌ Code formatting check failed!"
+    echo "   Run './gradlew spotlessApply' to fix formatting."
+    echo ""
+    exit 1
+fi
+
+# Run unit tests (skip integration tests if the task exists)
+echo "  → Running unit tests..."
+if ./gradlew tasks --all --quiet 2>/dev/null | grep -q "integrationTest"; then
+    TEST_CMD="./gradlew test -x integrationTest --quiet"
+else
+    TEST_CMD="./gradlew test --quiet"
+fi
+
+if ! $TEST_CMD 2>/dev/null; then
+    echo ""
+    echo "❌ Unit tests failed!"
+    echo "   Run './gradlew test' to see failures."
+    echo ""
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed."

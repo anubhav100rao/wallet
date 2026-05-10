@@ -1,0 +1,52 @@
+# === Java / Gradle ===
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.ctxt
+hs_err_pid*
+replay_pid*
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Maven (in case)
+target/
+
+# === IntelliJ IDEA ===
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# === VS Code ===
+.vscode/
+*.code-workspace
+
+# === macOS ===
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
+# === Environment & Secrets ===
+.env
+.env.*
+!.env.example
+
+# === Docker Compose overrides (local customization) ===
+infra/docker-compose.override.yml
+
+# === Logs ===
+*.log
+logs/
+
+# === Test outputs ===
+test-output/
+test-results/

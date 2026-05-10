@@ -1,0 +1,27 @@
+# Prometheus configuration for banking-wallet local dev
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Spring Boot services (Phase 1+)
+  # Each service exposes /actuator/prometheus
+  - job_name: "spring-boot"
+    metrics_path: /actuator/prometheus
+    scrape_interval: 5s
+    static_configs:
+      # Uncomment as services are added:
+      # - targets: ["wallet-monolith:8080"]
+      #   labels:
+      #     service: "wallet-monolith"
+      - targets: []
+
+  # Docker host metrics (optional — requires node-exporter)
+  # - job_name: "node"
+  #   static_configs:
+  #     - targets: ["node-exporter:9100"]

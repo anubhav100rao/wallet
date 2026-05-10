@@ -1,0 +1,36 @@
+# Docker Compose override for local customization
+# Copy this to docker-compose.override.yml and modify as needed.
+# This file is gitignored.
+
+services:
+  postgres:
+    # Uncomment to change the port if 5432 is already in use
+    # ports:
+    #   - "15432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  redis:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  redpanda:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  grafana:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # Example: expose additional debug ports
+  # otel-collector:
+  #   ports:
+  #     - "55679:55679"  # zpages
