@@ -28,7 +28,7 @@ The `infra/` directory contains the complete local development environment for t
 | **Tempo** | `bw-tempo` | `3200` (HTTP), `4317` (OTLP gRPC), `4318` (OTLP HTTP) | http://localhost:3200 |
 | **Loki** | `bw-loki` | `3100` | http://localhost:3100 |
 | **OTEL Collector** | `bw-otel-collector` | `14317` (gRPC), `14318` (HTTP) | `localhost:14317` |
-| **pgAdmin** | `bw-pgadmin` | `5050` | http://localhost:5050 (`admin@wallet.local`/`admin`) |
+| **pgAdmin** | `bw-pgadmin` | `5050` | http://localhost:5050 (`admin@wallet.dev`/`admin`) |
 | **Redpanda Console** | `bw-redpanda-console` | `8080` | http://localhost:8080 |
 
 ## Databases
