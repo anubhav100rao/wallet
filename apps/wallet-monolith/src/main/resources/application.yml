@@ -1,0 +1,98 @@
+# ──────────────────────────────────────────────────────────────
+# Banking Wallet — Base Configuration
+# ──────────────────────────────────────────────────────────────
+
+spring:
+  application:
+    name: wallet-monolith
+
+  # Virtual threads (Project Loom) — all request handling uses virtual threads
+  threads:
+    virtual:
+      enabled: true
+
+  # JPA / Hibernate
+  jpa:
+    open-in-view: false  # Disable OSIV — lazy loading outside a transaction is a bug
+    hibernate:
+      ddl-auto: validate  # Flyway manages schema; Hibernate only validates
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Flyway
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # Jackson
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+# ──────────────────────────────────────────────────────────────
+# Server
+# ──────────────────────────────────────────────────────────────
+server:
+  port: 8081
+  shutdown: graceful
+
+spring.lifecycle:
+  timeout-per-shutdown-phase: 30s
+
+# ──────────────────────────────────────────────────────────────
+# Actuator + Observability
+# ──────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        banking.wallet.op: true
+        banking.ledger.post: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+        banking.wallet.op: 0.5, 0.95, 0.99
+        banking.ledger.post: 0.5, 0.95, 0.99
+  tracing:
+    # 100% sampling locally; lower in prod via the prod profile.
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
+  otlp:
+    tracing:
+      # Tempo's OTLP HTTP receiver in the local Docker stack.
+      endpoint: http://localhost:4318/v1/traces
+
+# ──────────────────────────────────────────────────────────────
+# OpenAPI / Swagger
+# ──────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# ──────────────────────────────────────────────────────────────
+# Logging
+# ──────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    com.wallet: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

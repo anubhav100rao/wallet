@@ -1,0 +1,32 @@
+# ──────────────────────────────────────────────────────────────
+# Banking Wallet — Test Profile (Testcontainers)
+# ──────────────────────────────────────────────────────────────
+
+spring:
+  datasource:
+    # Testcontainers @ServiceConnection auto-configures this
+    url: jdbc:tc:postgresql:16:///test_db
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+management:
+  # Tempo isn't running in unit tests; turn off OTLP export so the SDK doesn't spam connection
+  # warnings. Tracing is still active in-process; just nothing is exported.
+  tracing:
+    sampling:
+      probability: 0.0
+  otlp:
+    tracing:
+      export:
+        enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.wallet: DEBUG

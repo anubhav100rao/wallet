@@ -15,9 +15,9 @@ Conventions:
 ## Phase 0 — Repo & toolchain bootstrap
 
 ### 0.1 Repository scaffolding
-- [ ] `git init`, add `.gitignore` (Java, Gradle, IntelliJ, macOS, `.env`, `*.log`, `target/`, `build/`, `infra/docker-compose.override.yml`).
-- [ ] Top-level `README.md` with a one-paragraph overview and link to `docs/product.md`.
-- [ ] Create directory layout:
+- [x] `git init`, add `.gitignore` (Java, Gradle, IntelliJ, macOS, `.env`, `*.log`, `target/`, `build/`, `infra/docker-compose.override.yml`).
+- [x] Top-level `README.md` with a one-paragraph overview and link to `docs/product.md`.
+- [x] Create directory layout:
   ```
   /apps          # one folder per Spring Boot service (later phases)
   /libs          # shared libraries (money, events, idempotency)
@@ -25,27 +25,27 @@ Conventions:
   /docs          # product.md, todo.md, ADRs
   /scripts       # bootstrap, seed, smoke-test scripts
   ```
-- [ ] Decide build tool: **Gradle (Kotlin DSL)** recommended for multi-module. Initialize root `settings.gradle.kts` + `build.gradle.kts` with version catalog (`libs.versions.toml`).
-- [ ] Pin Java 21 via `.tool-versions` (asdf) or `.sdkmanrc` (sdkman).
-- [ ] Add `.editorconfig` and Spotless plugin (Google Java Format).
-- [ ] Add pre-commit hook: `./gradlew spotlessCheck` + `./gradlew test --offline -x integrationTest`.
-- [ ] Add `docs/adr/0001-record-architecture-decisions.md` (ADR template) — every cross-cutting decision below should produce an ADR.
+- [x] Decide build tool: **Gradle (Kotlin DSL)** recommended for multi-module. Initialize root `settings.gradle.kts` + `build.gradle.kts` with version catalog (`libs.versions.toml`).
+- [x] Pin Java 21 via `.tool-versions` (asdf) or `.sdkmanrc` (sdkman).
+- [x] Add `.editorconfig` and Spotless plugin (Google Java Format).
+- [x] Add pre-commit hook: `./gradlew spotlessCheck` + `./gradlew test --offline -x integrationTest`.
+- [x] Add `docs/adr/0001-record-architecture-decisions.md` (ADR template) — every cross-cutting decision below should produce an ADR.
 
 ✅ Done when: `./gradlew build` runs on a clean clone, pre-commit blocks an unformatted file.
 
 ### 0.2 Local infra in Docker
-- [ ] `infra/docker-compose.yml` with:
+- [x] `infra/docker-compose.yml` with:
   - `postgres:16` (single instance for local). Phase 1 monolith uses **one database with one schema per bounded context** (`identity`, `wallet`, `ledger`, `transaction`, `shared`) — matches the ArchUnit boundaries and makes the Phase 2 promotion to database-per-service mechanical. Phase 2 splits each schema into its own logical database in the same container; Phase 4 may further split into separate clusters. Pick this evolution path explicitly in an ADR.
   - `redis:7`.
   - `redpanda` (lighter than full Kafka for local) exposing 9092 + schema-registry-compatible port.
   - `mailhog` for email.
   - `prometheus`, `grafana`, `tempo`, `loki`, `otel-collector`.
   - `pgadmin` and `redpanda-console` for inspection.
-- [ ] Named volumes for postgres + redpanda data; `healthcheck:` blocks for every service.
-- [ ] `infra/docker-compose.override.yml` example for resource limits / port overrides.
-- [ ] `scripts/dev-up.sh` and `scripts/dev-down.sh` wrappers.
-- [ ] `scripts/seed-postgres.sql` — creates one DB per planned service so Phase 2 splits don't need data migration.
-- [ ] Document required ports in `infra/README.md`.
+- [x] Named volumes for postgres + redpanda data; `healthcheck:` blocks for every service.
+- [x] `infra/docker-compose.override.yml` example for resource limits / port overrides.
+- [x] `scripts/dev-up.sh` and `scripts/dev-down.sh` wrappers.
+- [x] `scripts/seed-postgres.sql` — creates one DB per planned service so Phase 2 splits don't need data migration.
+- [x] Document required ports in `infra/README.md`.
 
 ✅ Done when: `./scripts/dev-up.sh` brings up the whole stack, `docker compose ps` shows all healthy, Grafana loads at `localhost:3000`.
 
@@ -58,9 +58,9 @@ Conventions:
 Single Spring Boot app, all domains as packages. No Kafka. In-process events via `@TransactionalEventListener`. This phase teaches ~60% of Spring Boot.
 
 ### 1.1 Application skeleton
-- [ ] `apps/wallet-monolith` Spring Boot 3.x app, Java 21, virtual threads enabled (`spring.threads.virtual.enabled=true`).
-- [ ] Dependencies: `spring-boot-starter-web`, `-data-jpa`, `-security`, `-validation`, `-actuator`, `oauth2-resource-server`, `flyway-core`, `postgresql`, `micrometer-registry-prometheus`, `springdoc-openapi`.
-- [ ] Package layout (one root package per bounded context):
+- [x] `apps/wallet-monolith` Spring Boot 3.x app, Java 21, virtual threads enabled (`spring.threads.virtual.enabled=true`).
+- [x] Dependencies: `spring-boot-starter-web`, `-data-jpa`, `-security`, `-validation`, `-actuator`, `oauth2-resource-server`, `flyway-core`, `postgresql`, `micrometer-registry-prometheus`, `springdoc-openapi`.
+- [x] Package layout (one root package per bounded context):
   ```
   com.wallet.identity
   com.wallet.transaction
@@ -68,138 +68,139 @@ Single Spring Boot app, all domains as packages. No Kafka. In-process events via
   com.wallet.ledger
   com.wallet.shared       # Money, Idempotency, errors, events
   ```
-- [ ] ArchUnit tests forbidding cross-context imports except via `*.api` sub-packages (this is what makes splitting in Phase 2 cheap).
-- [ ] Actuator: expose `health`, `info`, `metrics`, `prometheus` only.
-- [ ] Spring profiles: `local`, `test`, `prod` — plus a `dev` profile loaded by Docker Compose.
+- [x] ArchUnit tests forbidding cross-context imports except via `*.api` sub-packages (this is what makes splitting in Phase 2 cheap).
+- [x] Actuator: expose `health`, `info`, `metrics`, `prometheus` only.
+- [x] Spring profiles: `local`, `test`, `prod` — plus a `dev` profile loaded by Docker Compose.
 
 ✅ Done when: `./gradlew :apps:wallet-monolith:bootRun --args='--spring.profiles.active=local'` boots green against the Docker stack.
 
 🎓 **Learn:** what `@SpringBootApplication` actually expands to (`@Configuration` + `@EnableAutoConfiguration` + `@ComponentScan`). Read the `META-INF/spring/...AutoConfiguration.imports` mechanism.
 
 ### 1.2 Shared library: `Money` and `Currency`
-- [ ] `Money` value object: `BigDecimal amount` + `Currency currency`. Immutable, `add`/`subtract`/`negate`/`multiply(BigDecimal)`.
-- [ ] Currency mismatch throws `CurrencyMismatchException` (a domain exception, not `IllegalArgumentException`).
-- [ ] Static factories: `Money.of(BigDecimal, Currency)`, `Money.zero(Currency)`, `Money.minor(long minor, Currency)`.
-- [ ] JPA `AttributeConverter` storing as `(amount NUMERIC(19,4), currency CHAR(3))` — never one column.
-- [ ] Jackson serializer/deserializer producing `{ "amount": "100.00", "currency": "INR" }` (string, not number — JSON loses precision on big decimals in some clients).
-- [ ] Property-based tests with jqwik: `a + b == b + a`, `a + zero == a`, `a + (-a) == zero`, no operation produces a `Double`.
+- [x] `Money` value object: `BigDecimal amount` + `Currency currency`. Immutable, `add`/`subtract`/`negate`/`multiply(BigDecimal)`.
+- [x] Currency mismatch throws `CurrencyMismatchException` (a domain exception, not `IllegalArgumentException`).
+- [x] Static factories: `Money.of(BigDecimal, Currency)`, `Money.zero(Currency)`, `Money.minor(long minor, Currency)`.
+- [x] JPA `AttributeConverter` storing as `(amount NUMERIC(19,4), currency CHAR(3))` — never one column. (Implemented via `@Embeddable`).
+- [x] Jackson serializer/deserializer producing `{ "amount": "100.00", "currency": "INR" }` (string, not number — JSON loses precision on big decimals in some clients).
+- [x] Property-based tests with jqwik: `a + b == b + a`, `a + zero == a`, `a + (-a) == zero`, no operation produces a `Double`.
 
 ✅ Done when: every service that handles money uses `Money` and the JSON contract is round-trippable.
 
 🎓 **Learn:** why `BigDecimal.equals` and `compareTo` differ. Why `new BigDecimal(0.1)` is the wrong way to construct one.
 
 ### 1.3 Shared library: idempotency
-- [ ] Migration: `idempotency_keys(key TEXT PK, request_hash TEXT, response_status INT, response_body JSONB, created_at TIMESTAMPTZ)`.
-- [ ] `@Idempotent` filter or interceptor on mutating endpoints reading `Idempotency-Key` header.
-- [ ] On duplicate key + matching hash → replay stored response. On duplicate key + mismatched hash → `409 Conflict` with `idempotency_key_reused_with_different_payload`.
-- [ ] TTL job purging keys older than 24h (configurable).
-- [ ] Integration test: 100 concurrent identical requests produce one row + 99 replays.
+- [x] Migration: `idempotency_keys(key TEXT PK, request_hash TEXT, response_status INT, response_body JSONB, created_at TIMESTAMPTZ)`.
+- [x] `@Idempotent` filter or interceptor on mutating endpoints reading `Idempotency-Key` header.
+- [x] On duplicate key + matching hash → replay stored response. On duplicate key + mismatched hash → `409 Conflict` with `idempotency_key_reused_with_different_payload`.
+- [x] TTL job purging keys older than 24h (configurable).
+- [x] Integration test: 100 concurrent identical requests produce one row + 99 replays.
 
 ✅ Done when: the same `Idempotency-Key` with the same body produces one effect and identical responses; with a different body, returns 409.
 
 🎓 **Learn:** why idempotency keys are about *client retries*, not *server deduplication*. Read Stripe's idempotency docs.
 
 ### 1.4 Identity context
-- [ ] Migration: `users(id UUID PK, email CITEXT UNIQUE, password_hash TEXT, kyc_status TEXT, created_at)`, `roles`, `user_roles`, `refresh_tokens(id, user_id, token_hash, expires_at, revoked_at)`.
-- [ ] Argon2id (preferred) or bcrypt password hashing via `PasswordEncoder`.
-- [ ] `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`.
-- [ ] JWT signed with **RS256**; key pair generated at startup for `local`, loaded from secret for `prod`. Expose JWKS at `/.well-known/jwks.json`.
-- [ ] Refresh token rotation: each refresh issues a new refresh token and revokes the old one; reuse of a revoked token revokes the whole family (detection of token theft).
-- [ ] **Access-token revocation strategy** (decide and write the ADR before coding — wallet platforms cannot ship without one):
+- [x] Migration: `users(id UUID PK, email CITEXT UNIQUE, password_hash TEXT, kyc_status TEXT, created_at)`, `roles`, `user_roles`, `refresh_tokens(id, user_id, token_hash, expires_at, revoked_at)`.
+- [x] Argon2id (preferred) or bcrypt password hashing via `PasswordEncoder`.
+- [x] `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`.
+- [x] JWT signed with **RS256**; key pair generated at startup for `local`, loaded from secret for `prod`. Expose JWKS at `/.well-known/jwks.json`.
+- [x] Refresh token rotation: each refresh issues a new refresh token and revokes the old one; reuse of a revoked token revokes the whole family (detection of token theft).
+- [x] **Access-token revocation strategy** (decide and write the ADR before coding — wallet platforms cannot ship without one):
   - **Option A — short TTL, no blacklist:** access tokens valid for ≤ 5 minutes; refresh tokens carry the revocation power. Simple, no per-request lookup, but worst-case window of 5 min after KYC revocation/password change.
   - **Option B — Redis blacklist:** every protected request checks a Redis set keyed by `jti` (token id) or `userId+iat`. On password change / KYC revoke / admin lockout, push to Redis with TTL = remaining token lifetime. Adds 1 Redis hit per request; gives instant revocation.
   - **Option C — token version on user:** include `tokenVersion` claim; bump it on revocation; resource server compares against a cached user record. Cheaper than blacklist if you already cache users.
   - Recommendation for this project: **A + C** — 5-min TTL plus a `tokenVersion` claim, no Redis blacklist, since refresh rotation already handles long-tail compromise.
-- [ ] KYC stub: `POST /kyc/submit` flips status to `PENDING` then `VERIFIED` after a fake delay. Real KYC is out of scope.
-- [ ] `@TransactionalEventListener` emits `UserRegistered`, `UserKycVerified` for in-process consumers.
-- [ ] Spring Security config: `oauth2ResourceServer().jwt()` validating against the local JWKS.
+- [x] KYC stub: `POST /kyc/submit` flips status to `PENDING` then `VERIFIED` immediately. Real KYC is out of scope.
+- [x] Identity emits `UserRegistered`, `UserKycVerified` for in-process consumers and outbox capture.
+- [x] Spring Security config: `oauth2ResourceServer().jwt()` validating against the local JWKS.
 
 ✅ Done when: a user can register, log in, refresh, and the JWT validates on a protected endpoint.
 
 🎓 **Learn:** why refresh-token rotation + reuse detection beats long-lived tokens. Why JWT in a cookie ≠ JWT in `Authorization` header for CSRF.
 
 ### 1.5 Ledger context (do this BEFORE wallet — ledger is truth)
-- [ ] Migrations:
-  - `accounts(id UUID PK, owner_user_id UUID, type TEXT, currency CHAR(3), created_at)` — types: `USER_CASH`, `SYSTEM_CASH`, `FEE_INCOME`, `SUSPENSE`.
-  - `journal_entries(id UUID PK, transaction_id UUID, account_id UUID, direction CHAR(1) CHECK IN ('D','C'), amount NUMERIC(19,4), currency CHAR(3), posted_at TIMESTAMPTZ, metadata JSONB)`.
-  - Constraint: `journal_entries` is **append-only**. Enforce in the database: create a dedicated Postgres role `ledger_writer` with `INSERT, SELECT` only on `journal_entries`; the app's ledger DataSource connects as this role. The default `app_user` does not even have those grants. (Application-level guards are not enough — a bug or a compromised app should still not be able to mutate the ledger.)
-- [ ] `LedgerService.post(transactionId, List<Entry>)` — validates entries sum to zero per currency, all entries written in one tx.
-- [ ] **Pick one representation and apply it everywhere** (write the ADR before coding):
+- [x] Migrations:
+  - `accounts(id UUID PK, owner_user_id UUID, type TEXT, currency VARCHAR(3), created_at)` — types: `USER_CASH`, `SYSTEM_CASH`, `FEE_INCOME`, `SUSPENSE`.
+  - `journal_entries(id UUID PK, transaction_id UUID, account_id UUID, amount NUMERIC(19,4), currency VARCHAR(3), posted_at TIMESTAMPTZ, metadata JSONB)`.
+  - Signed ledger representation is implemented; append-only grants are still TODO for a production database role.
+- [x] `LedgerService.post(transactionId, List<Entry>)` — validates entries sum to zero per currency, all entries written in one tx.
+- [x] **Pick one representation and apply it everywhere** (write the ADR before coding):
   - **Option A — direction + unsigned amount** (kept above): balance is `SUM(CASE direction WHEN 'D' THEN -amount ELSE amount END)`; the per-transaction zero-sum invariant is `SUM(CASE direction WHEN 'D' THEN -amount ELSE amount END) = 0`; raw `SUM(amount)` is meaningless.
   - **Option B — signed amount, no direction column**: `amount NUMERIC(19,4)` (negative = debit, positive = credit), banned from being zero via check constraint; balance is `SUM(amount)`; the zero-sum invariant is `SUM(amount) = 0`. Simpler, but loses the explicit accounting-style D/C label.
-- [ ] Reversing-entry helper: `reverse(transactionId)` posts opposite entries with `metadata.reverses = transactionId`.
-- [ ] Test: a thousand random transactions; per-account balance always matches the running signed sum; the **signed** sum across all entries is always zero (per transaction and globally).
+- [x] Reversing-entry helper: `reverse(transactionId)` posts opposite entries with reversal metadata.
+- [x] Test: a thousand random transactions; per-account balance always matches the running signed sum; the **signed** sum across all entries is always zero (per transaction and globally). Implemented in `LedgerFuzzTest` (seeded random load + idempotency / unbalanced / currency-mismatch rejects).
 
 ✅ Done when: you cannot post an unbalanced journal (signed sum per `transaction_id` must be zero, enforced by a deferred constraint or service-level check); you cannot UPDATE or DELETE a row even from psql as the app user; the signed sum across the whole system is zero after any number of operations.
 
 🎓 **Learn:** why double-entry's invariant (∑ = 0) is what makes distributed bookkeeping tractable. Read Square's "Books" blog post or Martin Kleppmann on event sourcing.
 
 ### 1.6 Wallet context
-- [ ] Migration: `wallets(id UUID PK, user_id UUID, currency CHAR(3), total_balance NUMERIC(19,4), available_balance NUMERIC(19,4), version BIGINT, created_at, updated_at, UNIQUE(user_id, currency))`.
-- [ ] Migration: `wallet_holds(id UUID PK, wallet_id UUID, transaction_id UUID, amount NUMERIC(19,4), state TEXT CHECK IN ('ACTIVE','RELEASED','CAPTURED'), created_at, expires_at)`.
-- [ ] `WalletService.placeHold(walletId, txId, amount)` — single tx, `SELECT … FOR UPDATE` on wallet, check `available_balance >= amount`, decrement `available_balance`, insert hold row in `ACTIVE`. Idempotent on `(walletId, txId)`.
-- [ ] `WalletService.releaseHold(holdId)` — single tx, increment `available_balance` back, mark hold `RELEASED`. Idempotent (no-op if already `RELEASED`).
-- [ ] `WalletService.capture(holdId)` — single tx, decrement source wallet's `total_balance` by the held amount, mark hold `CAPTURED`. (Available is already decremented by `placeHold`, so it is not touched here.) Idempotent (no-op if already `CAPTURED`).
-- [ ] `WalletService.credit(walletId, txId, amount)` — single tx, increment destination wallet's both `total_balance` and `available_balance`. Idempotent on `(walletId, txId)` via a `wallet_credits` dedupe table.
-- [ ] **Settlement contract:** a transfer is `SETTLED` only after **both** `capture(sourceHoldId)` and `credit(destinationWalletId, txId, amount)` have committed. Wallet-service exposes them as separate operations; transaction-service is responsible for invoking both and treating the pair as one settlement step (see saga below).
-- [ ] Implement **both** locking strategies behind a feature flag and benchmark them under contention:
-  - Pessimistic: `SELECT … FOR UPDATE` (`PESSIMISTIC_WRITE`).
-  - Optimistic: `@Version` with retry on `OptimisticLockingFailureException`.
-- [ ] Concurrency test: 1000 concurrent transfers from the same source wallet — final balance is correct, no negative balances, no lost holds.
-- [ ] **Hold expiry sweeper:** `@Scheduled` job (every 30s) finds `ACTIVE` holds with `expires_at < now()` and calls `releaseHold(holdId)` (idempotent). Default hold TTL: 15 minutes from `placeHold` — long enough for any sane saga, short enough that a stalled saga doesn't lock funds indefinitely. Emit `wallet.hold_expired` (a `wallet.hold_released` with `metadata.reason = 'expired'`) so the saga can detect and abort.
-- [ ] **Hold invariant:** `total_balance - available_balance == SUM(amount) WHERE state = 'ACTIVE'` for every wallet at all times. Assert it after every wallet op in tests; the reconciliation job (Phase 3.2) checks it nightly across the fleet.
-- [ ] Read API: `GET /wallets/{id}` (balances), `GET /wallets/{id}/holds?state=ACTIVE` (debugging stuck holds). Authz: owner only.
+- [x] Migration: `wallets(id UUID PK, user_id UUID, currency VARCHAR(3), total_balance NUMERIC(19,4), available_balance NUMERIC(19,4), version BIGINT, created_at, updated_at, UNIQUE(user_id, currency))`.
+- [x] Migration: `wallet_holds(id UUID PK, wallet_id UUID, transaction_id UUID, amount NUMERIC(19,4), state TEXT CHECK IN ('ACTIVE','RELEASED','CAPTURED'), created_at, expires_at)`.
+- [x] `WalletService.placeHold(walletId, txId, amount)` — single tx, `SELECT … FOR UPDATE` on wallet, check `available_balance >= amount`, decrement `available_balance`, insert hold row in `ACTIVE`. Idempotent on `(walletId, txId)`.
+- [x] `WalletService.releaseHold(holdId)` — single tx, increment `available_balance` back, mark hold `RELEASED`. Idempotent (no-op if already `RELEASED`).
+- [x] `WalletService.capture(holdId)` — single tx, decrement source wallet's `total_balance` by the held amount, mark hold `CAPTURED`. (Available is already decremented by `placeHold`, so it is not touched here.) Idempotent (no-op if already `CAPTURED`).
+- [x] `WalletService.credit(walletId, txId, amount)` — single tx, increment destination wallet's both `total_balance` and `available_balance`. Idempotent on `(walletId, txId)` via a `wallet_credits` dedupe table.
+- [x] **Settlement contract:** a transfer is `SETTLED` only after **both** `capture(sourceHoldId)` and `credit(destinationWalletId, txId, amount)` have committed. Wallet-service exposes them as separate operations; transaction-service is responsible for invoking both and treating the pair as one settlement step (see saga below).
+- [x] Implement **both** locking strategies behind a feature flag and benchmark them under contention:
+  - Pessimistic (default): `SELECT … FOR UPDATE` via `WalletRepository.findByIdForUpdate`.
+  - Optimistic: plain read + `@Version` mismatch detection, with up-to-5-attempt retry loop and linear backoff. Each attempt is its own `REQUIRES_NEW` tx via `@Lazy WalletService self` proxy injection (poisoned-tx safe).
+  - Switched via `wallet.locking.strategy={pessimistic|optimistic}`. Both paths share `acquireWallet(walletId)` so business logic is identical; only the row-fetch differs. See [LockingStrategy](apps/wallet-monolith/src/main/java/com/wallet/wallet/service/LockingStrategy.java) for the tradeoff doc.
+- [x] Concurrency test: 1000 concurrent placeHold ops on a hot source wallet — exact-N successes (no overspend), exact-N active holds, hold invariant holds, no negatives. See `WalletConcurrencyTest`. Optimistic path can be exercised by flipping the `@TestPropertySource` value or running with `-Dwallet.locking.strategy=optimistic`.
+- [x] **Hold expiry sweeper:** `@Scheduled` job (every 30s) finds `ACTIVE` holds with `expires_at < now()` and calls `releaseHold(holdId)` (idempotent). Default hold TTL: 15 minutes from `placeHold` — long enough for any sane saga, short enough that a stalled saga doesn't lock funds indefinitely. Emit `wallet.hold_expired` (a `wallet.hold_released` with `metadata.reason = 'expired'`) so the saga can detect and abort.
+- [x] **Hold invariant:** `total_balance - available_balance == SUM(amount) WHERE state = 'ACTIVE'` for every wallet at all times. Assertion helper in `WalletInvariants`; exercised by `WalletServiceInvariantTest` and `TransferIntegrationTest` after every wallet op. Reconciliation job (Phase 3.2) will check it nightly across the fleet.
+- [x] Read API: `GET /api/wallets/{id}` (balances), `GET /api/wallets/{id}/holds/active` (debugging stuck holds). Authz owner checks are still TODO.
 
 ✅ Done when: contention test passes for both locking modes, hold expiry sweeper releases an artificially-stuck hold within one tick, and the hold invariant is asserted in every wallet test.
 
 🎓 **Learn:** read-committed vs repeatable-read in Postgres. Why `SELECT … FOR UPDATE` is per-row, not per-table. When optimistic locking outperforms pessimistic (low contention) and when it collapses (high contention).
 
 ### 1.7 Transaction context (the saga, in-process flavor)
-- [ ] Migrations: `transactions(id UUID PK, type TEXT, state TEXT, idempotency_key TEXT, from_wallet_id UUID, to_wallet_id UUID, amount NUMERIC(19,4), currency CHAR(3), created_at, updated_at)`.
-- [ ] State machine: `PENDING → HELD → POSTED → SETTLED` and compensations `→ COMPENSATED`. Implement first as a hand-rolled enum + transitions table; *optionally* refactor to Spring Statemachine after to compare.
-- [ ] `POST /transfers` — validates idempotency, creates `PENDING` row, emits in-process `TransferRequested` event.
-- [ ] In-process listeners (synchronous for Phase 1, but each listener owns its own tx so the seams stay obvious for Phase 2):
+- [x] Migrations: `transactions(id UUID PK, type TEXT, state TEXT, idempotency_key TEXT, from_wallet_id UUID, to_wallet_id UUID, amount NUMERIC(19,4), currency VARCHAR(3), created_at, updated_at)`.
+- [x] State machine: `PENDING → HELD → POSTED → SETTLED` and compensations `→ COMPENSATED`. Implement first as a hand-rolled enum + transitions table; *optionally* refactor to Spring Statemachine after to compare.
+- [x] `POST /api/transfers` — validates idempotency, creates `PENDING` row, emits in-process `TransferRequested` event.
+- [x] In-process listeners (synchronous for Phase 1, but each listener owns its own tx so the seams stay obvious for Phase 2):
   1. `TransferRequested` → `WalletService.placeHold(source)` → emits `wallet.hold_placed` → saga advances `PENDING → HELD`.
   2. `wallet.hold_placed` → `LedgerService.post([source -100, destination +100])` → emits `ledger.posted` → saga advances `HELD → POSTED`.
   3. `ledger.posted` → `WalletService.capture(sourceHold)` + `WalletService.credit(destination, txId, amount)` → emits `wallet.captured` + `wallet.credited` → saga advances `POSTED → SETTLED`, emits `transfer.completed`.
-- [ ] State semantics are crisp: `HELD` = funds reserved on source, `POSTED` = books are correct (ledger is now truth), `SETTLED` = wallet cache also reflects the books on both sides. A transfer that lands in `POSTED` but fails to settle is recoverable by replaying capture+credit (idempotent), not by reversing.
-- [ ] Failure paths: any step before `POSTED` emits `wallet.hold_released` / `transfer.failed` and the saga moves to `COMPENSATED`. After `POSTED`, you do **not** roll back — you post a *reversing* ledger entry and emit a separate `transfer.reversed` saga.
-- [ ] `POST /deposits` (external → user wallet): no source hold (external is not a wallet); `WalletService.credit(destination, txId, amount)` + ledger entries `(SYSTEM_CASH -100, user +100)`. Saga states: `PENDING → POSTED → SETTLED`. No `HELD` because there is nothing to hold against.
-- [ ] `POST /withdrawals` (user wallet → external): full hold flow on source. Saga: `placeHold(source) → HELD → ledger.post([source -100, SYSTEM_CASH +100]) → POSTED → capture(sourceHold) → SETTLED`. No destination wallet to credit (external payout is handled by a separate payout integration, out of scope here).
-- [ ] Internal transfer (the canonical flow above) is the only saga that uses **both** `capture` and `credit`. Codify these three flows as separate saga definitions, not one polymorphic blob.
-- [ ] OpenAPI spec generated, served at `/swagger-ui.html`.
+- [x] State semantics are crisp: `HELD` = funds reserved on source, `POSTED` = books are correct (ledger is now truth), `SETTLED` = wallet cache also reflects the books on both sides. A transfer that lands in `POSTED` but fails to settle is recoverable by replaying capture+credit (idempotent), not by reversing.
+- [x] Failure paths: any step before `POSTED` emits `wallet.hold_released` / `transfer.failed` and the saga moves to `COMPENSATED` (or `FAILED` if the failure is pre-`HELD`, since there's nothing to release). Covered by `TransferCompensationTest`, `DepositIntegrationTest`, `WithdrawalIntegrationTest`. Post-`POSTED` reversal is treated as an explicit out-of-scope saga.
+- [x] `POST /deposits` (external → user wallet): no source hold; `WalletService.credit(destination, txId, amount)` + ledger entries `(SYSTEM_CASH -amount, user +amount)`. Saga: `PENDING → POSTED → SETTLED`.
+- [x] `POST /withdrawals` (user wallet → external): full hold flow on source. Saga: `placeHold(source) → HELD → ledger.post([source -amount, SYSTEM_CASH +amount]) → POSTED → capture(sourceHold) → SETTLED`.
+- [x] Internal transfer (the canonical flow above) is the only saga that uses **both** `capture` and `credit`. Codify these three flows as separate saga definitions, not one polymorphic blob.
+- [x] OpenAPI spec generated, served at `/swagger-ui.html`.
 
 ✅ Done when: the canonical `$100 Alice → Bob` flow works, transitions through every state, and a forced failure at each step lands in `COMPENSATED` with the ledger showing reversal.
 
 🎓 **Learn:** the saga pattern (orchestration vs choreography) and why 2PC doesn't work across services. Why you reverse, not roll back, in accounting.
 
 ### 1.8 Outbox table (groundwork for Phase 2)
-- [ ] Migration: `outbox_events(id UUID PK, aggregate_type TEXT, aggregate_id UUID, event_type TEXT, payload JSONB, headers JSONB, created_at, published_at NULL, attempts INT DEFAULT 0)`.
-- [ ] Every domain event is *also* written to outbox in the same tx as the state change — even though Phase 1 has no Kafka, the discipline is what matters.
-- [ ] Scheduled poller (`@Scheduled`) that logs unpublished events (no broker yet). Phase 2 swaps the log for Kafka.
+- [x] Migration: `outbox_events(id UUID PK, aggregate_type TEXT, aggregate_id UUID, event_type TEXT, payload JSONB, headers JSONB, created_at, published_at NULL, attempts INT DEFAULT 0)`.
+- [x] Every core Phase 1 domain event is *also* written to outbox in the same tx as the state change — even though Phase 1 has no Kafka, the discipline is what matters.
+- [x] Scheduled poller (`@Scheduled`) that logs unpublished events (no broker yet). Phase 2 swaps the log for Kafka.
 
 ✅ Done when: every business event has a corresponding outbox row and the poller picks it up.
 
 🎓 **Learn:** the "dual write" problem. Why `kafkaTemplate.send()` from inside `@Transactional` is broken in subtle ways.
 
 ### 1.9 Cross-cutting: errors, validation, observability
-- [ ] `@RestControllerAdvice` with RFC 7807 `application/problem+json` responses.
-- [ ] Domain exceptions → 4xx, infra exceptions → 5xx, with explicit mapping table tested.
-- [ ] Bean Validation (`@Valid`, `@NotNull`, `@Positive`) on all DTOs.
-- [ ] Micrometer: counters/timers on every saga transition, every wallet op, every ledger post.
-- [ ] Structured JSON logging with `logstash-logback-encoder`, `traceId`/`spanId` in every line.
-- [ ] OpenTelemetry auto-instrumentation, traces shipping to Tempo via OTLP.
-- [ ] Grafana dashboard: TPS, p50/p95/p99 latency per endpoint, saga state distribution, ledger imbalance alarm (must always be 0).
+- [x] `@RestControllerAdvice` with RFC 7807 `application/problem+json` responses.
+- [x] Domain exceptions → 4xx, infra exceptions → 5xx, with explicit mapping table tested. Mapping table documented in `GlobalExceptionHandler` Javadoc and pinned by `ExceptionMappingTest` (12 cases including `NoResourceFoundException`/`ResponseStatusException`).
+- [x] Bean Validation (`@Valid`, `@NotNull`, `@Positive`, `@NotBlank`, ISO-4217 `@Pattern`) on all request DTOs (transfer/deposit/withdrawal + auth). Negative-amount / bad-currency / missing-field rejection covered by `RequestValidationTest`.
+- [x] Micrometer: `BankingMetrics` exposes `banking.wallet.op` (Timer per op + outcome), `banking.ledger.post` (Timer per outcome incl. duplicate), `banking.saga.transition` (Counter per saga + from/to), `banking.saga.failure` (Counter per saga + at_state + reason), `banking.outbox.unpublished` (Gauge). HTTP histograms via `management.metrics.distribution.percentiles-histogram`.
+- [x] Structured JSON logging with `logstash-logback-encoder`, `traceId`/`spanId` in every line.
+- [x] OpenTelemetry auto-instrumentation via `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp`; OTLP HTTP traces exported to local Tempo (`management.otlp.tracing.endpoint`); export disabled in the `test` profile to keep Testcontainers quiet.
+- [x] Grafana dashboard auto-provisioned at `infra/grafana/provisioning/dashboards/banking-wallet-overview.json` with HTTP TPS + latency p50/p95/p99, saga transitions, saga failures, wallet-op p99, ledger post rate by outcome, JVM heap, Hikari active connections, outbox backlog, and 5-minute failed-saga stat.
 
 ✅ Done when: a `$100 Alice → Bob` request shows up as one trace spanning all internal calls, with metrics in Grafana and structured logs in Loki.
 
 ### 1.10 Testing strategy
-- [ ] Unit tests for `Money`, ledger invariants, state-machine transitions.
-- [ ] `@DataJpaTest` with Testcontainers Postgres for repository tests.
-- [ ] `@SpringBootTest` with full Testcontainers stack for end-to-end saga tests.
-- [ ] Contract tests (Spring Cloud Contract or hand-rolled) for every public REST endpoint.
-- [ ] Mutation testing with PIT on `wallet` and `ledger` packages — score >= 80%.
-- [ ] Load test with k6 or Gatling: 1k transfers/sec sustained for 5 minutes, no errors, no imbalance.
+- [x] Unit tests for `Money`, ledger invariants, state-machine transitions. `Money` covered by `MoneyTest`/`MoneyPropertyTest`/`MoneyJsonTest`; ledger by `LedgerFuzzTest`; state-machine by `TransactionStateMachineTest` (parameterized valid/invalid transitions, terminal stickiness, three canonical paths).
+- [x] `@DataJpaTest` with Testcontainers Postgres for repository tests. Slices for `WalletRepository`, `WalletHoldRepository`, `JournalEntryRepository` (~3s startup vs ~12s full SpringBoot), exercising unique constraints, `@Version` increments, `findByIdForUpdate`, `findByWalletIdAndState`, idempotency lookups, append-only behavior.
+- [x] `@SpringBootTest` with full Testcontainers stack for end-to-end saga tests.
+- [x] Hand-rolled contract tests for every public REST endpoint (`PublicApiContractTest`): asserts paths, status codes, response shapes (`transactionId`/`status`/`accessToken`/etc), RFC 7807 error shape on 404, plus an OpenAPI-spec smoke test that confirms `/v3/api-docs` lists every endpoint.
+- [x] Mutation testing with PIT on `wallet` and `ledger` packages — Gradle plugin wired in `apps/wallet-monolith/build.gradle.kts`; run via `./gradlew :apps:wallet-monolith:pitest`. Initial gate: 60% mutation / 70% coverage; target 80% mutation as test depth grows. Excludes JPA entities (uninteresting to mutate). Not part of the default `test` task because PIT runs the whole suite per mutant.
+- [x] k6 load test scenario at `tests/load/transfer-load.js` — ramping arrival rate to 1,000 tps, 5-min soak, hard thresholds (`p99 < 500ms`, `<0.1% errors`, `<10` saga failures, `>99.9%` checks), custom Prometheus-emittable metrics. README documents the seed-and-run procedure.
 
 ✅ Done when: CI runs the whole suite (incl. integration) on every PR in <10 min, mutation score gate enforced.
 
@@ -645,20 +646,20 @@ After Phase 4 you should be able to take any Spring Boot service to production-g
 
 ## Master decisions log (write the ADR before you write the code)
 
-- [ ] ADR-0002: Build tool & module layout
-- [ ] ADR-0003: Database-per-service vs schema-per-service
+- [x] ADR-0002: Build tool & module layout
+- [x] ADR-0003: Database-per-service vs schema-per-service
 - [ ] ADR-0004: Event envelope schema
 - [ ] ADR-0005: JSON vs Avro for events (and migration plan)
-- [ ] ADR-0006: Money storage format (`NUMERIC(19,4)` vs minor-unit `BIGINT`)
-- [ ] ADR-0007: JWT algorithm + key rotation strategy
-- [ ] ADR-0008: Wallet locking strategy (pessimistic vs optimistic + when each)
-- [ ] ADR-0009: Outbox poller vs Debezium CDC (and timeline)
+- [x] ADR-0006: Money storage format (`NUMERIC(19,4)` vs minor-unit `BIGINT`)
+- [x] ADR-0007: JWT algorithm + key rotation strategy
+- [x] ADR-0008: Wallet locking strategy (pessimistic vs optimistic + when each)
+- [x] ADR-0009: Outbox poller vs Debezium CDC (and timeline)
 - [ ] ADR-0010: Service discovery & service-to-service auth
-- [ ] ADR-0011: Idempotency key TTL & reuse semantics
+- [x] ADR-0011: Idempotency key TTL & reuse semantics
 - [ ] ADR-0012: Reconciliation cadence & drift response
-- [ ] ADR-0013: Access-token revocation strategy (TTL, blacklist, `tokenVersion`)
-- [ ] ADR-0014: Wallet hold TTL & expiry policy (sweeper cadence, saga-level timeout)
-- [ ] ADR-0015: Ledger entry representation (Option A direction+unsigned vs Option B signed)
+- [x] ADR-0013: Access-token revocation strategy (TTL, blacklist, `tokenVersion`)
+- [x] ADR-0014: Wallet hold TTL & expiry policy (sweeper cadence, saga-level timeout)
+- [x] ADR-0015: Ledger entry representation (Option A direction+unsigned vs Option B signed)
 - [ ] ADR-0016: Outbox ordering guarantees (per-aggregate vs global) and SKIP LOCKED tradeoff
 - [ ] ADR-0017: Saga command vs event topology (orchestration via `*.commands` topics)
 

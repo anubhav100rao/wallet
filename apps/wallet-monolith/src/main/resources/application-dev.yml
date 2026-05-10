@@ -1,0 +1,16 @@
+# ──────────────────────────────────────────────────────────────
+# Banking Wallet — Dev Profile (loaded by Docker Compose for the app container)
+# ──────────────────────────────────────────────────────────────
+# This profile is for when the app itself runs inside Docker Compose,
+# connecting to sibling containers by service name.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/wallet_dev
+    username: wallet_admin
+    password: wallet_secret
+
+logging:
+  level:
+    root: INFO
+    com.wallet: DEBUG

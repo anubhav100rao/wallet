@@ -1,0 +1,29 @@
+# ──────────────────────────────────────────────────────────────
+# Banking Wallet — Local Profile (Docker stack)
+# ──────────────────────────────────────────────────────────────
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wallet_dev
+    username: wallet_admin
+    password: wallet_secret
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+
+  flyway:
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+
+  # Spring Security — disable for initial skeleton boot (will be configured in 1.4)
+  security:
+    user:
+      name: admin
+      password: admin
+
+logging:
+  level:
+    root: INFO
+    com.wallet: DEBUG

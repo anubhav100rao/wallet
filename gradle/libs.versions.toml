@@ -14,6 +14,7 @@ flyway = "11.8.0"
 # Security
 argon2-jvm = "2.11"
 nimbus-jose-jwt = "10.3"
+bouncycastle = "1.80"
 
 # Observability
 micrometer = "1.14.5"
@@ -50,9 +51,12 @@ flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", versio
 
 # Security
 argon2-jvm = { module = "de.mkammerer:argon2-jvm", version.ref = "argon2-jvm" }
+bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 
 # Observability
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+micrometer-tracing-bridge-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel" }
+opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
 logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-logback" }
 
 # Testing
@@ -74,3 +78,4 @@ springdoc-openapi-starter = { module = "org.springdoc:springdoc-openapi-starter-
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+pitest = { id = "info.solidsoft.pitest", version = "1.15.0" }
